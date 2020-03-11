@@ -1,8 +1,9 @@
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from geopy.geocoders import Nominatim
-import os.path as path
-import logging
+from config import baseDir, BOT_TOKEN
+from endpoints import call_forecast_endpoint
+import logging, os.path as path
 import json
 
 
@@ -10,13 +11,13 @@ import json
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
-baseDir = path.abspath(path.dirname('__file__'))
 
 # initializing relevant variables
 updater = Updater(
-    token='1087869624:AAGXcFIAHqVtrN2NNBtRTXwrjDAaDZjfMyo', use_context=True)
+    token=BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 job = updater.job_queue
+acceptable_forecasts = ['1','2','3','4','5','6','7']
 
 
 def start(update, context):
@@ -56,7 +57,6 @@ def unsubscribe(update, context):
 
     context.bot.send_message(
         chat_id=chat_id, text='Unsubscribed successfully!')
-
 
 
 def set_location(update, context):
@@ -108,6 +108,23 @@ def change_location(update, context):
                              text='share your new location with me', reply_markup=reply_markup)
 
 
+def forecast(update, context):
+    chat_id = str(update.effective_chat.id)
+
+    if len(context.args) != 1:
+        context.bot.send_message(
+            chat_id=chat_id, text='Please input a number from 1-5 after the command')
+        return
+
+    if context.args[0] not in acceptable_forecasts:
+        context.bot.send_message(
+            chat_id=chat_id, text='Please input a number from 1-5 after the command')
+        return
+
+    text = call_forecast_endpoint(chat_id, int(context.args[0]) * 8)
+
+    context.bot.send_message(chat_id=chat_id, text=text)
+
 
 # Creating the Handlers
 start_handler = CommandHandler('start', start)
@@ -116,6 +133,7 @@ unsubscribe_handler = CommandHandler('unsubscribe', unsubscribe)
 view_location_handler = CommandHandler('location', view_location)
 set_location_handler = MessageHandler(Filters.location, set_location)
 changelocation_handler = CommandHandler('changelocation', change_location)
+forecast_handler = CommandHandler('forecast', forecast)
 
 # Adding the handlers to the dispatcher
 dispatcher.add_handler(start_handler)
@@ -124,6 +142,7 @@ dispatcher.add_handler(unsubscribe_handler)
 dispatcher.add_handler(view_location_handler)
 dispatcher.add_handler(set_location_handler)
 dispatcher.add_handler(changelocation_handler)
+dispatcher.add_handler(forecast_handler)
 
 updater.start_polling()
 updater.idle()

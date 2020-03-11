@@ -1,2 +1,1 @@
-Hi there!, want to always stay up to date with the weather?, I've got you covered.
-Type /subscribe to receive my daily alerts.
+Hi there!, I'm here to help you stay up to date with the weather. Type /subscribe to get my daily alerts.

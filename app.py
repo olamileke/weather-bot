@@ -1,9 +1,11 @@
-from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram import KeyboardButton, ReplyKeyboardMarkup, ChatAction
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from geopy.geocoders import Nominatim
+from datetime import time
 from config import baseDir, BOT_TOKEN
-from endpoints import call_forecast_endpoint
-import logging, os.path as path
+from endpoints import call_weather_endpoint, call_alert_endpoint, create_alert_text
+import logging
+import os.path as path
 import json
 
 
@@ -17,9 +19,10 @@ updater = Updater(
     token=BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 job = updater.job_queue
-acceptable_forecasts = ['1','2','3','4','5','6','7']
+acceptable_forecasts = ['1', '2', '3', '4', '5']
 
 
+# Handler Functions
 def start(update, context):
     with open(path.join(baseDir, 'start_message.txt')) as reader:
         text = reader.read()
@@ -121,9 +124,32 @@ def forecast(update, context):
             chat_id=chat_id, text='Please input a number from 1-5 after the command')
         return
 
-    text = call_forecast_endpoint(chat_id, int(context.args[0]) * 8)
+    context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
+
+    text = call_weather_endpoint(chat_id, int(context.args[0]) * 8)
 
     context.bot.send_message(chat_id=chat_id, text=text)
+
+
+# Job Functions
+def fetch_alerts(context):
+    with open(path.join(baseDir, 'subscribers.json')) as reader:
+        subscribers = json.load(reader)
+
+    for chat_id, coordinates in subscribers.items():
+        call_alert_endpoint(chat_id, coordinates, 8)
+
+
+def send_alerts(context):
+    with open(path.join(baseDir, 'alerts.json')) as reader:
+        alerts = json.load(reader)
+
+    for chat_id, alert in alerts.items():
+        context.bot.send_message(chat_id=chat_id, text=create_alert_text(alert))
+
+
+job.run_daily(fetch_alerts, time=time(hour=22, minute=27, second=50))
+job.run_daily(send_alerts, time=time(hour=23, minute=19, second=50))
 
 
 # Creating the Handlers

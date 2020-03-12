@@ -3,7 +3,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from geopy.geocoders import Nominatim
 from datetime import time
 from config import baseDir, BOT_TOKEN
-from endpoints import call_weather_endpoint, call_alert_endpoint, create_alert_text
+from endpoints import call_forecast_endpoint, call_alert_endpoint, create_alert_text
+from middlewares import subscribed_middleware
 import logging
 import os.path as path
 import json
@@ -87,7 +88,7 @@ def set_location(update, context):
     context.bot.send_message(
         chat_id=chat_id, text=text)
 
-
+@subscribed_middleware
 def view_location(update, context):
     with open(path.join(baseDir, 'subscribers.json')) as reader:
         subscribers = json.load(reader)
@@ -126,7 +127,7 @@ def forecast(update, context):
 
     context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
 
-    text = call_weather_endpoint(chat_id, int(context.args[0]) * 8)
+    text = call_forecast_endpoint(chat_id, int(context.args[0]) * 8)
 
     context.bot.send_message(chat_id=chat_id, text=text)
 
@@ -145,11 +146,21 @@ def send_alerts(context):
         alerts = json.load(reader)
 
     for chat_id, alert in alerts.items():
-        context.bot.send_message(chat_id=chat_id, text=create_alert_text(alert))
+        context.bot.send_message(
+            chat_id=chat_id, text=create_alert_text(alert))
 
 
-job.run_daily(fetch_alerts, time=time(hour=22, minute=27, second=50))
-job.run_daily(send_alerts, time=time(hour=23, minute=19, second=50))
+def clear_alerts(context):
+    alerts = dict()
+
+    with open(path.join(baseDir, 'alerts.json'), 'w') as writer:
+        json.dump(alerts, writer)
+
+
+# Creating the Jobs
+job.run_daily(fetch_alerts, time=time(hour=12, minute=20, second=10))
+job.run_daily(send_alerts, time=time(hour=12, minute=32, second=5))
+job.run_daily(clear_alerts, time=time(hour=13, minute=3, second=0))
 
 
 # Creating the Handlers

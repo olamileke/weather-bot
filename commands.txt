@@ -1,0 +1,7 @@
+Hello! You can control me by sending these commands:
+/commands - resend this message
+/subscribe - receive my alerts
+/location - see your location
+/forecast - see forecasts
+/setlocation - edit your location
+/unsubscribe - stop receiving alerts 

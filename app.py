@@ -31,6 +31,13 @@ def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 
+def commands(update, context):
+    with open(path.join(baseDir, 'commands.txt')) as reader:
+        text = reader.read()
+
+        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+
 def subscribe(update, context):
     with open(path.join(baseDir, 'subscribers.json')) as reader:
         subscribers = json.load(reader)
@@ -48,6 +55,7 @@ def subscribe(update, context):
             chat_id=update.effective_chat.id, text='You are already subscribed!')
 
 
+@subscribed_middleware
 def unsubscribe(update, context):
     chat_id = str(update.effective_chat.id)
 
@@ -88,6 +96,7 @@ def set_location(update, context):
     context.bot.send_message(
         chat_id=chat_id, text=text)
 
+
 @subscribed_middleware
 def view_location(update, context):
     with open(path.join(baseDir, 'subscribers.json')) as reader:
@@ -103,6 +112,7 @@ def view_location(update, context):
         chat_id=update.effective_chat.id, text=location.address)
 
 
+@subscribed_middleware
 def change_location(update, context):
     location_keyboard = KeyboardButton(
         text='Share Location', request_location=True)
@@ -130,6 +140,10 @@ def forecast(update, context):
     text = call_forecast_endpoint(chat_id, int(context.args[0]) * 8)
 
     context.bot.send_message(chat_id=chat_id, text=text)
+
+
+def unknown(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm sorry. I do not understand that. Type /commands to see a list of my commands.")
 
 
 # Job Functions
@@ -167,19 +181,23 @@ job.run_daily(clear_alerts, time=time(hour=13, minute=3, second=0))
 start_handler = CommandHandler('start', start)
 subscribe_handler = CommandHandler('subscribe', subscribe)
 unsubscribe_handler = CommandHandler('unsubscribe', unsubscribe)
+command_handler = CommandHandler('commands', commands)
 view_location_handler = CommandHandler('location', view_location)
 set_location_handler = MessageHandler(Filters.location, set_location)
-changelocation_handler = CommandHandler('changelocation', change_location)
+changelocation_handler = CommandHandler('setlocation', change_location)
 forecast_handler = CommandHandler('forecast', forecast)
+unknown_handler = MessageHandler(Filters.all, unknown)
 
 # Adding the handlers to the dispatcher
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(subscribe_handler)
 dispatcher.add_handler(unsubscribe_handler)
+dispatcher.add_handler(command_handler)
 dispatcher.add_handler(view_location_handler)
 dispatcher.add_handler(set_location_handler)
 dispatcher.add_handler(changelocation_handler)
 dispatcher.add_handler(forecast_handler)
+dispatcher.add_handler(unknown_handler)
 
 updater.start_polling()
 updater.idle()

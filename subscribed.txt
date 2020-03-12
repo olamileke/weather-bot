@@ -1,7 +1,2 @@
-Subscribed successfully!
-Here are a list of my commands
-
-/location - view your location
-/forecast - access forecasts
-/changelocation - change your location
-/unsubscribe - unsubscribe from my alerts
+Subscribed successfully. 
+Type /commands to see a list of my commands.

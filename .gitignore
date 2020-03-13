@@ -1,0 +1,6 @@
+
+# Virtual Machine Folder
+venv
+
+# Pycache folder
+__pycache__

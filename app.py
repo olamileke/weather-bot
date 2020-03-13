@@ -7,7 +7,7 @@ from endpoints import call_forecast_endpoint, call_alert_endpoint, create_alert_
 from middlewares import subscribed_middleware
 import logging
 import os.path as path
-import json
+import json, pytz
 
 
 # Enable logging of errors
@@ -172,9 +172,10 @@ def clear_alerts(context):
 
 
 # Creating the Jobs
+pytz.timezone('Africa/Lagos')
 job.run_daily(fetch_alerts, time=time(hour=12, minute=20, second=10))
 job.run_daily(send_alerts, time=time(hour=12, minute=32, second=5))
-job.run_daily(clear_alerts, time=time(hour=13, minute=3, second=0))
+job.run_daily(clear_alerts, time=time(hour=16, minute=4, second=50))
 
 
 # Creating the Handlers
